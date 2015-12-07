@@ -256,7 +256,29 @@ Boolean.valueOf=function(value){
 	return new Boolean(value).valueOf();
 }
 
+/* Array */
+stjs.createJavaArray = function() {
+    var argsArray = Array.prototype.slice.call(arguments);
+    var arraySize = argsArray[0];
 
+    if (argsArray.length == 1) {
+        var theArray = new Array(arraySize);
+        for (var i = 0; i < arraySize; i++) {
+            theArray[i] = null;
+        }
+        return theArray;
+    }
+    else {
+        var argsWithoutFirst = argsArray.slice(1);
+
+        var theArray = new Array(arraySize);
+        for (var i = 0; i < arraySize; i++) {
+            theArray[i] = stjs.createJavaArray.apply(null, argsWithoutFirst);
+        }
+
+        return theArray;
+    }
+}
 
 /************* STJS helper functions ***************/
 stjs.global=this;
@@ -274,7 +296,7 @@ stjs.ns=function(path){
 
 stjs.copyProps=function(from, to){
 	for(var key in from){
-		if (!stjs.skipCopy[key])
+		if (!stjs.skipCopy.hasOwnProperty(key))
 			to[key]	= from[key];
 	}
 	return to;
@@ -282,7 +304,7 @@ stjs.copyProps=function(from, to){
 
 stjs.copyInexistentProps=function(from, to){
 	for(var key in from){
-		if (!stjs.skipCopy[key] && !to[key])
+		if (!stjs.skipCopy.hasOwnProperty(key) && !to[key])
 			to[key]	= from[key];
 	}
 	return to;
@@ -450,6 +472,42 @@ stjs.enumeration=function(){
 	return e;
 };
 
+var JavaEnum = function() {};
+
+stjs.extend(JavaEnum, null, [], function(constructor, prototype) {
+  prototype._name = null;
+  prototype._ordinal = null;
+  constructor._values = [];
+
+  constructor.values = function() {
+    return this._values;
+  };
+  constructor.valueOf = function() {
+    var value = arguments[0];
+    // No values to compare with, assume the caller want the value of ourself
+    if (!value) {
+      return this;
+    }
+    var matchedValue = null;
+    for(var key in this._values){
+      var obj = this._values[key];
+      if (value === obj.name()) {
+        return obj;
+      }
+    }
+    throw new Error("Specified JavaEnum value not found in the enumaration.");
+  };
+  prototype.name = function() {
+    return this._name;
+  };
+  prototype.ordinal = function() {
+    return this._ordinal;
+  };
+  prototype.toString = function() {
+    return this._name;
+  };
+  prototype.equals = stjs.JavalikeEquals;
+}, {});
 
 /**
  * if true the execution of generated main methods is disabled.

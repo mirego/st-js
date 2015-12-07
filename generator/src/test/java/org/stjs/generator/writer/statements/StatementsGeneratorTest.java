@@ -1,11 +1,14 @@
 package org.stjs.generator.writer.statements;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Ignore;
 import org.junit.Test;
+import org.stjs.generator.GeneratorConfiguration;
+import org.stjs.generator.GeneratorConfigurationBuilder;
 import org.stjs.generator.utils.AbstractStjsTest;
 import org.stjs.generator.JavascriptFileGenerationException;
+import org.stjs.generator.utils.AbstractStjsTest;
+
+import static org.junit.Assert.assertEquals;
 
 public class StatementsGeneratorTest extends AbstractStjsTest {
 	@Test
@@ -15,8 +18,10 @@ public class StatementsGeneratorTest extends AbstractStjsTest {
 
 	@Test
 	public void testForEach() {
-		// XXX this is not exactly correct as arg here is the index not the value
-		assertCodeContains(Statements2.class, "for (var arg in args) {");
+		assertCodeContains(Statements2.class, "" +
+				"        for (var index$arg in args) {\n" +
+				"            var arg = args[index$arg];\n" +
+				"        }");
 	}
 
 	@Test
@@ -29,17 +34,6 @@ public class StatementsGeneratorTest extends AbstractStjsTest {
 		assertCodeContains(Statements4.class, "switch(i)");
 		assertCodeContains(Statements4.class, "case 1: break;");
 		assertCodeContains(Statements4.class, "default: break");
-	}
-
-	@Test(expected = JavascriptFileGenerationException.class)
-	public void testArray1() {
-		generate(Statements5.class);
-	}
-
-	@Test(expected = JavascriptFileGenerationException.class)
-	public void testArray2() {
-		// java array creation is forbidden
-		generate(Statements6.class);
 	}
 
 	@Ignore
@@ -108,8 +102,8 @@ public class StatementsGeneratorTest extends AbstractStjsTest {
 	@Test
 	public void testStaticInitializer() {
 		assertCodeContains(Statements14.class, "{" + //
-				"Statements14.instance = new Statements14();" + //
-				"var n = Statements14.instance.method();" + //
+				"Statements14._instance = new Statements14();" + //
+				"var n = Statements14._instance.method();" + //
 				"}");
 	}
 
@@ -125,10 +119,10 @@ public class StatementsGeneratorTest extends AbstractStjsTest {
 		assertEquals(2, ((Number) execute(Statements16.class)).intValue());
 	}
 
-	@Test(expected = JavascriptFileGenerationException.class)
+	@Test
 	public void testSynchronizedBlock() {
-		// synchronized not supported
-		generate(Statements17.class);
+		GeneratorConfiguration configuration = new GeneratorConfigurationBuilder().setSynchronizedAllowed(true).build();
+		assertCodeContains(Statements17.class, "for (var i = 0; i < 10; ++i) {}", configuration);
 	}
 
 	@Test(expected = JavascriptFileGenerationException.class)

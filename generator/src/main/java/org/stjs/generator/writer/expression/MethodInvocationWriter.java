@@ -1,10 +1,16 @@
 package org.stjs.generator.writer.expression;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree;
+import com.sun.tools.javac.code.Symbol;
+import org.stjs.generator.AnnotationUtils;
 import org.stjs.generator.GenerationContext;
+import org.stjs.generator.GeneratorConstants;
 import org.stjs.generator.javac.ElementUtils;
+import org.stjs.generator.javac.InternalUtils;
 import org.stjs.generator.javac.TreeUtils;
 import org.stjs.generator.javac.TreeWrapper;
 import org.stjs.generator.visitor.DiscriminatorKey;
@@ -13,11 +19,11 @@ import org.stjs.generator.writer.MemberWriters;
 import org.stjs.generator.writer.WriterContributor;
 import org.stjs.generator.writer.WriterVisitor;
 
-import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.Tree;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MethodInvocationWriter<JS> implements WriterContributor<MethodInvocationTree, JS> {
 
@@ -44,15 +50,67 @@ public class MethodInvocationWriter<JS> implements WriterContributor<MethodInvoc
 		return targetJS;
 	}
 
-	public static String buildMethodName(MethodInvocationTree tree) {
+	public static <JS> String buildMethodName(MethodInvocationTree tree, GenerationContext<JS> context) {
 		ExpressionTree select = tree.getMethodSelect();
+
 		if (select instanceof IdentifierTree) {
 			// simple call: method(args)
-			return ((IdentifierTree) select).getName().toString();
+			return buildMethodNameForIdentifierTree(tree, context, (IdentifierTree) select);
+		} else if (select instanceof MemberSelectTree) {
+			// calls with target: target.method(args)
+			return buildMethodNameForMemberSelectTree(select);
 		}
-		// calls with target: target.method(args)
+		throw context.addError(tree, "Unsupported tree type during buildMethodName.");
+	}
+
+	private static String buildMethodNameForMemberSelectTree(ExpressionTree select) {
 		MemberSelectTree memberSelect = (MemberSelectTree) select;
-		return memberSelect.getIdentifier().toString();
+		String methodName = memberSelect.getIdentifier().toString();
+		Symbol symbol = null;
+
+		if (TreeUtils.isFieldAccess(memberSelect.getExpression())) {
+            symbol = (Symbol) InternalUtils.symbol(select);
+        }
+
+		if (symbol != null && (symbol.getKind() == ElementKind.FIELD || symbol.getKind() == ElementKind.METHOD)) {
+            return prefixNonPublicMethods(methodName, symbol);
+        } else {
+            return methodName;
+        }
+	}
+
+	private static <JS> String buildMethodNameForIdentifierTree(MethodInvocationTree tree, GenerationContext<JS> context, IdentifierTree select) {
+		String methodName = select.getName().toString();
+
+		// Ignore super() calls, these are never going to be prefixed
+		if (GeneratorConstants.SUPER.equals(methodName)) {
+			return methodName;
+		}
+
+		Symbol symbol = (Symbol.MethodSymbol) InternalUtils.symbol(tree);
+		ExecutableElement methodElement = TreeUtils.getMethod((Symbol.MethodSymbol) symbol);
+
+		if (methodElement != null
+                && (AnnotationUtils.JSOverloadName.isPresent((Symbol.MethodSymbol) methodElement)
+                || hasAnOverloadedMethod(context, methodElement))) {
+            methodName = AnnotationUtils.JSOverloadName.decorate((Symbol.MethodSymbol) methodElement);
+        }
+		return prefixNonPublicMethods(methodName, symbol);
+	}
+
+	private static <JS> boolean hasAnOverloadedMethod(GenerationContext<JS> context, ExecutableElement methodElement) {
+		if (context == null) {
+			return false;
+        }
+		return ElementUtils.hasAnOverloadedEquivalentMethod(methodElement, context.getElements());
+	}
+
+	private static String prefixNonPublicMethods(String methodName, Symbol element) {
+		if (element != null && element.getModifiers().contains(Modifier.PUBLIC)) {
+            return methodName;
+        } else {
+            return GeneratorConstants.NON_PUBLIC_METHODS_AND_FIELDS_PREFIX + methodName;
+        }
 	}
 
 	public static <JS> List<JS> buildArguments(WriterVisitor<JS> visitor, MethodInvocationTree tree, GenerationContext<JS> context) {
