@@ -1,5 +1,6 @@
 package org.stjs.generator.writer.inlineObjects;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.stjs.generator.utils.AbstractStjsTest;
 import org.stjs.generator.JavascriptFileGenerationException;
@@ -66,4 +67,41 @@ public class InlineObjectsGeneratorTest extends AbstractStjsTest {
 	public void testAssignmentThatLooksLikeToPropertyTemplateButIsnt2(){
 		generate(InlineObjects10.class);
 	}
+
+	@Test
+	public void testAnonymousClassCallingOuter() {
+		assertCodeContains(InlineObjects11_AnonymousClass_calling_outer.class, "" +
+				"    prototype.doIt = function() {\n" +
+				"        var this$0 = this;\n" +
+				"        return new (stjs.extend(function InlineObjects11_AnonymousClass_calling_outer$1() {}, null, [InlineObjects11_AnonymousClass_calling_outer.Dummy], function(constructor, prototype) {\n" +
+				"            prototype.doIt = function() {\n" +
+				"                return this$0.outerMethod();\n" +
+				"            };\n" +
+				"        }, {}, {}))().doIt();\n" +
+				"    };\n");
+		assertCodeContains(InlineObjects11_AnonymousClass_calling_outer.class, "" +
+				"    prototype.doIt2 = function() {\n" +
+				"        var this$0 = this;\n" +
+				"        return new (stjs.extend(function InlineObjects11_AnonymousClass_calling_outer$2() {}, null, [InlineObjects11_AnonymousClass_calling_outer.SuperDummy], function(constructor, prototype) {\n" +
+				"            prototype.doIt = function() {\n" +
+				"                var this$1 = this;\n" +
+				"                return new (stjs.extend(function InlineObjects11_AnonymousClass_calling_outer$2$1() {}, null, [InlineObjects11_AnonymousClass_calling_outer.Dummy], function(constructor, prototype) {\n" +
+				"                    prototype.doIt = function() {\n" +
+				"                        return this$0.outerMethod() + this$1.superDoIt();\n" +
+				"                    };\n" +
+				"                }, {}, {}))().doIt();\n" +
+				"            };\n" +
+				"            prototype.superDoIt = function() {\n" +
+				"                return \"superDoIt() --> \" + this$0.outerMethod();\n" +
+				"            };\n" +
+				"        }, {}, {}))().doIt();\n" +
+				"    };");
+	}
+
+	@Test
+	public void testCallInnerClassCallingOuter() {
+		Object result = execute(InlineObjects11b_InnerClass_calling_outer.class);
+		Assert.assertEquals(true, result);
+	}
+
 }

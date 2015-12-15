@@ -1,10 +1,10 @@
 package org.stjs.generator.writer.inlineFunctions;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
-import org.stjs.generator.utils.AbstractStjsTest;
 import org.stjs.generator.JavascriptFileGenerationException;
+import org.stjs.generator.utils.AbstractStjsTest;
+
+import static org.junit.Assert.assertEquals;
 
 public class InlineFunctionGeneratorTest extends AbstractStjsTest {
 	@Test
@@ -26,7 +26,7 @@ public class InlineFunctionGeneratorTest extends AbstractStjsTest {
 	public void testInterfaceAndParam() {
 		assertCodeContains(InlineFunctions2b.class,
 				"stjs.extend(function InlineFunctions2b$1(){},  null, [FunctionInterface2], function(constructor, prototype){"
-						+ "prototype.test=2; prototype.$invoke=function(arg){arg=arg+1;}");
+						+ "prototype._test=2; prototype.$invoke=function(arg){arg=arg+1;}");
 	}
 
 	@Test
@@ -50,11 +50,6 @@ public class InlineFunctionGeneratorTest extends AbstractStjsTest {
 	public void testImplementInlinefunction() {
 		// implement is forbidden
 		generate(InlineFunctions6.class);
-	}
-
-	@Test(expected = JavascriptFileGenerationException.class)
-	public void testAccessOuterScope() {
-		generate(InlineFunctions7.class);
 	}
 
 	@Test

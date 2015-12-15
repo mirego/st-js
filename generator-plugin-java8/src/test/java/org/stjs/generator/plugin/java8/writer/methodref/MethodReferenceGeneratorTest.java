@@ -1,15 +1,14 @@
 package org.stjs.generator.plugin.java8.writer.methodref;
 
+import org.junit.Test;
 import org.stjs.generator.utils.AbstractStjsTest;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 public class MethodReferenceGeneratorTest extends AbstractStjsTest {
 	@Test
 	public void testStaticMethodRef() {
-		assertCodeContains(MethodRef1.class, "calculate(MethodRef1.inc)");
+		assertCodeContains(MethodRef1.class, "_calculate(MethodRef1._inc)");
 		assertEquals(1, ((Number)execute(MethodRef1.class)).intValue());
 	}
 
@@ -23,7 +22,7 @@ public class MethodReferenceGeneratorTest extends AbstractStjsTest {
 	@Test
 	public void testInstanceMethodRefWithInterface() {
 		assertCodeContains(MethodRef9.class,
-				"calculate(stjs.bind(\"inc2\"), new MethodRef9.IncImpl(), 1)");
+				"calculate(stjs.bind(\"inc2\"), new MethodRef9.IncImpl(this), 1)");
 		assertEquals(3, ((Number)execute(MethodRef9.class)).intValue());
 	}
 
@@ -46,7 +45,7 @@ public class MethodReferenceGeneratorTest extends AbstractStjsTest {
 
 	@Test
 	public void testUsageOFieldMethodRef() {
-		assertCodeContains(MethodRef6.class, "calculate(stjs.bind(this.field, \"method\"))");
+		assertCodeContains(MethodRef6.class, "calculate(stjs.bind(this._field, \"method\"))");
 	}
 
 	@Test
