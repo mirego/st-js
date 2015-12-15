@@ -17,7 +17,11 @@
  * methods added to JS prototypes
  */
 
-var stjs={};
+if (typeof window !== 'undefined') {
+  window.stjs = {};
+} else {
+  global.stjs = {};
+}
 
 stjs.NOT_IMPLEMENTED = function(){
 	throw "This method is not implemented in Javascript.";
@@ -48,12 +52,15 @@ if (!String.prototype.getChars) {
 if (!String.prototype.contentEquals){
 	String.prototype.contentEquals=stjs.NOT_IMPLEMENTED;
 }
-if (!String.prototype.startsWith) {
-	String.prototype.startsWith=function(start, from){
-		var f = from != null ? from : 0;
-		return this.substring(f, f + start.length) == start;
-	}
+
+String.prototype.startsWith$String_int=function(start, from){
+    return this.substring(from, from + start.length) == start;
 }
+
+String.prototype.startsWith$String=function(start) {
+    return this.startsWith$String_int(start, 0);
+}
+
 if (!String.prototype.endsWith) {
 	String.prototype.endsWith=function(end){
 		if (end == null)
@@ -126,21 +133,24 @@ if (!String.prototype.replaceFirst){
 	}
 }
 
-if (!String.prototype.regionMatches){
-	String.prototype.regionMatches=function(ignoreCase, toffset, other, ooffset, len){
-		if (arguments.length == 4){
-			len=arguments[3];
-			ooffset=arguments[2];
-			other=arguments[1];
-			toffset=arguments[0];
-			ignoreCase=false;
-		}
-		if (toffset < 0 || ooffset < 0 || other == null || toffset + len > this.length || ooffset + len > other.length)
-			return false;
-		var s1 = this.substring(toffset, toffset + len);
-		var s2 = other.substring(ooffset, ooffset + len);
-		return ignoreCase ? s1.equalsIgnoreCase(s2) : s1 === s2;
-	}
+String.prototype.indexOf$String=function(str) {
+    return this.indexOf(str) >= 0;
+}
+
+String.prototype.indexOf$String_int=stjs.NOT_IMPLEMENTED;
+String.prototype.indexOf$int=stjs.NOT_IMPLEMENTED;
+String.prototype.indexOf$int_int=stjs.NOT_IMPLEMENTED;
+
+String.prototype.regionMatches$boolean_int_String_int_int=function(ignoreCase, toffset, other, ooffset, len) {
+    if (toffset < 0 || ooffset < 0 || other == null || toffset + len > this.length || ooffset + len > other.length)
+        return false;
+    var s1 = this.substring(toffset, toffset + len);
+    var s2 = other.substring(ooffset, ooffset + len);
+    return ignoreCase ? s1.equalsIgnoreCase(s2) : s1 === s2;
+}
+
+String.prototype.regionMatches$int_String_int_int=function(toffset, other, ooffset, len) {
+    return this.regionMatches$boolean_int_String_int_int(true, toffset, other, ooffset, len);
 }
 
 if(!String.prototype.contains){
@@ -152,7 +162,6 @@ if(!String.prototype.contains){
 if(!String.prototype.getClass){
 	String.prototype.getClass=stjs.JavalikeGetClass;
 }
-
 
 //force valueof to match the Java's behavior
 String.valueOf=function(value){
@@ -166,6 +175,26 @@ var Float=Number;
 var Integer=Number;
 var Long=Number;
 var Short=Number;
+
+Number.parseInt$String=function(str) {
+    return parseInt(str);
+}
+
+Number.parseInt$String_int=function(str, radix) {
+    return parseInt(str, radix);
+}
+
+Number.valueOf$String=function(str) {
+    return Number.valueOf(Number.parseInt$String(str));
+}
+
+Number.valueOf$int=function(value) {
+    return Number.valueOf(value);
+}
+
+Number.valueOf$String_int=function(str, radix) {
+    return Number.valueOf(Number.parseInt$String_int(str, radix));
+}
 
 /* type conversion - approximative as Javascript only has integers and doubles */
 if (!Number.prototype.intValue) {
@@ -256,10 +285,32 @@ Boolean.valueOf=function(value){
 	return new Boolean(value).valueOf();
 }
 
+/* Array */
+stjs.createJavaArray = function() {
+    var argsArray = Array.prototype.slice.call(arguments);
+    var arraySize = argsArray[0];
 
+    if (argsArray.length == 1) {
+        var theArray = new Array(arraySize);
+        for (var i = 0; i < arraySize; i++) {
+            theArray[i] = null;
+        }
+        return theArray;
+    }
+    else {
+        var argsWithoutFirst = argsArray.slice(1);
+
+        var theArray = new Array(arraySize);
+        for (var i = 0; i < arraySize; i++) {
+            theArray[i] = stjs.createJavaArray.apply(null, argsWithoutFirst);
+        }
+
+        return theArray;
+    }
+}
 
 /************* STJS helper functions ***************/
-stjs.global=this;
+stjs.global = (typeof window !== 'undefined' ? window : global);
 stjs.skipCopy = {"prototype":true, "constructor": true, "$typeDescription":true, "$inherit" : true};
 
 stjs.ns=function(path){
@@ -274,7 +325,7 @@ stjs.ns=function(path){
 
 stjs.copyProps=function(from, to){
 	for(var key in from){
-		if (!stjs.skipCopy[key])
+		if (!stjs.skipCopy.hasOwnProperty(key))
 			to[key]	= from[key];
 	}
 	return to;
@@ -282,7 +333,7 @@ stjs.copyProps=function(from, to){
 
 stjs.copyInexistentProps=function(from, to){
 	for(var key in from){
-		if (!stjs.skipCopy[key] && !to[key])
+		if (!stjs.skipCopy.hasOwnProperty(key) && !to[key])
 			to[key]	= from[key];
 	}
 	return to;
@@ -450,6 +501,42 @@ stjs.enumeration=function(){
 	return e;
 };
 
+var JavaEnum = function() {};
+
+stjs.extend(JavaEnum, null, [], function(constructor, prototype) {
+  prototype._name = null;
+  prototype._ordinal = null;
+  constructor._values = [];
+
+  constructor.values = function() {
+    return this._values;
+  };
+  constructor.valueOf = function() {
+    var value = arguments[0];
+    // No values to compare with, assume the caller want the value of ourself
+    if (!value) {
+      return this;
+    }
+    var matchedValue = null;
+    for(var key in this._values){
+      var obj = this._values[key];
+      if (value === obj.name()) {
+        return obj;
+      }
+    }
+    throw new Error("Specified JavaEnum value not found in the enumaration.");
+  };
+  prototype.name = function() {
+    return this._name;
+  };
+  prototype.ordinal = function() {
+    return this._ordinal;
+  };
+  prototype.toString = function() {
+    return this._name;
+  };
+  prototype.equals = stjs.JavalikeEquals;
+}, {});
 
 /**
  * if true the execution of generated main methods is disabled.

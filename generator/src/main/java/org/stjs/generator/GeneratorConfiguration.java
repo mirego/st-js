@@ -14,27 +14,34 @@ package org.stjs.generator;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Set;
+import java.util.Map;
 
 public class GeneratorConfiguration {
 	private final Collection<String> allowedPackages;
-	private final Set<String> allowedJavaLangClasses;
+	private final Collection<String> allowedJavaLangClasses;
+	private final Collection<String> forbiddenMethodInvocations;
+	private final Collection<String> annotations;
+	private final Map<String, String> namespaces;
 	private final boolean generateArrayHasOwnProperty;
 	private final boolean generateSourceMap;
 	private final String sourceEncoding;
-	private final Set<String> annotations;
 	private final ClassLoader stjsClassLoader;
 	private final File targetFolder;
 	private final GenerationDirectory generationFolder;
 	private final ClassResolver classResolver;
+	private final boolean isSynchronizedAllowed;
 
 	// We actually have a builder for that, so the number of parameters warning doesn't apply
 	@SuppressWarnings("PMD.ExcessiveParameterList")
-	GeneratorConfiguration(Collection<String> allowedPackages, Set<String> allowedJavaLangClasses, boolean generateArrayHasOwnProperty,
-			boolean generateSourceMap, String sourceEncoding, Set<String> annotations, ClassLoader stjsClassLoader, File targetFolder,
-			GenerationDirectory generationFolder, ClassResolver classResolver) {
+	GeneratorConfiguration(Collection<String> allowedPackages, Collection<String> allowedJavaLangClasses,
+						   Collection<String> forbiddenMethodInvocations, Map<String, String> namespaces,
+						   boolean generateArrayHasOwnProperty, boolean generateSourceMap, String sourceEncoding,
+						   Collection<String> annotations, ClassLoader stjsClassLoader, File targetFolder,
+						   GenerationDirectory generationFolder, ClassResolver classResolver, boolean isSynchronizedAllowed) {
 		this.allowedPackages = allowedPackages;
 		this.allowedJavaLangClasses = allowedJavaLangClasses;
+		this.forbiddenMethodInvocations = forbiddenMethodInvocations;
+		this.namespaces = namespaces;
 		this.generateArrayHasOwnProperty = generateArrayHasOwnProperty;
 		this.generateSourceMap = generateSourceMap;
 		this.sourceEncoding = sourceEncoding;
@@ -43,6 +50,7 @@ public class GeneratorConfiguration {
 		this.targetFolder = targetFolder;
 		this.generationFolder = generationFolder;
 		this.classResolver = classResolver;
+		this.isSynchronizedAllowed = isSynchronizedAllowed;
 	}
 
 	/**
@@ -53,8 +61,16 @@ public class GeneratorConfiguration {
 		return allowedPackages;
 	}
 
-	public Set<String> getAllowedJavaLangClasses() {
+	public Collection<String> getAllowedJavaLangClasses() {
 		return allowedJavaLangClasses;
+	}
+
+	public Collection<String> getForbiddenMethodInvocations() {
+		return forbiddenMethodInvocations;
+	}
+
+	public Map<String, String> getNamespaces() {
+		return namespaces;
 	}
 
 	public boolean isGenerateArrayHasOwnProperty() {
@@ -73,7 +89,7 @@ public class GeneratorConfiguration {
 	 * these are annotations to be generated
 	 * @return
 	 */
-	public Set<String> getAnnotations() {
+	public Collection<String> getAnnotations() {
 		return annotations;
 	}
 
@@ -91,5 +107,9 @@ public class GeneratorConfiguration {
 
 	public ClassResolver getClassResolver() {
 		return classResolver;
+	}
+
+	public boolean isSynchronizedAllowed() {
+		return isSynchronizedAllowed;
 	}
 }

@@ -16,9 +16,10 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Use this class to build a configuration needed by the {@link Generator}
@@ -26,12 +27,15 @@ import java.util.Set;
  * @author <a href='mailto:ax.craciun@gmail.com'>Alexandru Craciun</a>
  */
 public class GeneratorConfigurationBuilder {
-	private final Collection<String> allowedPackages = new HashSet<String>();
-	private final Set<String> allowedJavaLangClasses = new HashSet<String>();
-	private final Set<String> annotations = new HashSet<String>();
+	private final Collection<String> allowedPackages = new HashSet<>();
+	private final Collection<String> allowedJavaLangClasses = new HashSet<>();
+	private final Collection<String> annotations = new HashSet<>();
+	private final Collection<String> forbiddenMethodInvocations = new HashSet<>();
+	private final Map<String, String> namespaces = new HashMap<>();
 	private boolean generateArrayHasOwnProperty = true;
 	private boolean generateSourceMap;
 	private String sourceEncoding = Charset.defaultCharset().name();
+	private boolean isSynchronizedAllowed = true;
 	private ClassLoader stjsClassLoader;
 	private File targetFolder;
 	private GenerationDirectory generationFolder;
@@ -47,6 +51,8 @@ public class GeneratorConfigurationBuilder {
 		if (baseConfig != null) {
 			allowedPackages(baseConfig.getAllowedPackages());
 			allowedJavaLangClasses(baseConfig.getAllowedJavaLangClasses());
+			forbiddenMethodInvocations(baseConfig.getForbiddenMethodInvocations());
+			namespaces(baseConfig.getNamespaces());
 			annotations(baseConfig.getAnnotations());
 			generateArrayHasOwnProperty(baseConfig.isGenerateArrayHasOwnProperty());
 			generateSourceMap(baseConfig.isGenerateSourceMap());
@@ -55,6 +61,7 @@ public class GeneratorConfigurationBuilder {
 			targetFolder(baseConfig.getTargetFolder());
 			generationFolder(baseConfig.getGenerationFolder());
 			classResolver(baseConfig.getClassResolver());
+			setSynchronizedAllowed(baseConfig.isSynchronizedAllowed());
 		}
 	}
 
@@ -63,8 +70,13 @@ public class GeneratorConfigurationBuilder {
 		return this;
 	}
 
-	public GeneratorConfigurationBuilder allowedJavaLangClasses(String className) {
+	public GeneratorConfigurationBuilder allowedJavaLangClass(String className) {
 		allowedJavaLangClasses.add(className);
+		return this;
+	}
+
+	public GeneratorConfigurationBuilder forbiddenMethodInvocation(String methodInvocation) {
+		forbiddenMethodInvocations.add(methodInvocation);
 		return this;
 	}
 
@@ -75,6 +87,21 @@ public class GeneratorConfigurationBuilder {
 
 	public GeneratorConfigurationBuilder allowedJavaLangClasses(Collection<String> classNames) {
 		allowedJavaLangClasses.addAll(classNames);
+		return this;
+	}
+
+	public GeneratorConfigurationBuilder forbiddenMethodInvocations(Collection<String> methodInvocations) {
+		forbiddenMethodInvocations.addAll(methodInvocations);
+		return this;
+	}
+
+	public GeneratorConfigurationBuilder namespaces(Map<String, String> namespacesMap) {
+		namespaces.putAll(namespacesMap);
+		return this;
+	}
+
+	public GeneratorConfigurationBuilder annotations(Collection<String> annotationNames) {
+		annotations.addAll(annotationNames);
 		return this;
 	}
 
@@ -98,11 +125,6 @@ public class GeneratorConfigurationBuilder {
 		return this;
 	}
 
-	public GeneratorConfigurationBuilder annotations(Collection<String> annotationNames) {
-		annotations.addAll(annotationNames);
-		return this;
-	}
-
 	public GeneratorConfigurationBuilder stjsClassLoader(ClassLoader stjsClassLoader) {
 		this.stjsClassLoader = stjsClassLoader;
 		return this;
@@ -122,6 +144,12 @@ public class GeneratorConfigurationBuilder {
 		this.classResolver = classResolver;
 		return this;
 	}
+
+	public GeneratorConfigurationBuilder setSynchronizedAllowed(boolean synchronizedAllowed) {
+		this.isSynchronizedAllowed = synchronizedAllowed;
+		return this;
+	}
+
 
 	public GeneratorConfiguration build() {
 		allowedJavaLangClasses.add("Object");
@@ -144,14 +172,18 @@ public class GeneratorConfigurationBuilder {
 		allowedJavaLangClasses.add("RuntimeException");
 
 		allowedJavaLangClasses.add("Iterable");
+		allowedJavaLangClasses.add("Enum");
 
 		allowedPackages.add("java.lang");
 
 		allowedPackage(Iterator.class.getName());
+		allowedPackage(Enum.class.getName());
 
 		return new GeneratorConfiguration(//
 				allowedPackages,  //
 				allowedJavaLangClasses, //
+				forbiddenMethodInvocations, //
+				namespaces, //
 				generateArrayHasOwnProperty, //
 				generateSourceMap, //
 				sourceEncoding,  //
@@ -159,7 +191,8 @@ public class GeneratorConfigurationBuilder {
 				stjsClassLoader,  //
 				targetFolder,  //
 				generationFolder, //
-				classResolver == null ? new DefaultClassResolver(stjsClassLoader) : classResolver //
+				classResolver == null ? new DefaultClassResolver(stjsClassLoader) : classResolver, //
+				isSynchronizedAllowed //
 		);
 	}
 

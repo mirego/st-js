@@ -1,31 +1,27 @@
 package org.stjs.generator.plugin;
 
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.VariableTree;
 import org.stjs.generator.GenerationContext;
 import org.stjs.generator.check.CheckVisitor;
-import org.stjs.generator.check.declaration.ArrayTypeForbiddenCheck;
 import org.stjs.generator.check.declaration.ClassDuplicateMemberNameCheck;
-import org.stjs.generator.check.declaration.ClassEnumWithoutMembersCheck;
 import org.stjs.generator.check.declaration.ClassGlobalForbidInnerCheck;
 import org.stjs.generator.check.declaration.ClassGlobalInstanceMembersCheck;
 import org.stjs.generator.check.declaration.ClassImplementJavascriptFunctionCheck;
 import org.stjs.generator.check.declaration.ClassNamespaceCheck;
-import org.stjs.generator.check.declaration.FieldInitializerCheck;
 import org.stjs.generator.check.declaration.MethodDeclarationTemplateCheck;
-import org.stjs.generator.check.declaration.MethodOverloadCheck;
 import org.stjs.generator.check.declaration.MethodSynchronizedCheck;
-import org.stjs.generator.check.declaration.MethodVarArgParamCheck;
 import org.stjs.generator.check.declaration.MethodWrongNameCheck;
-import org.stjs.generator.check.expression.IdentifierAccessOuterScopeCheck;
 import org.stjs.generator.check.expression.IdentifierAccessServerSideCheck;
 import org.stjs.generator.check.expression.IdentifierGlobalScopeNameClashCheck;
 import org.stjs.generator.check.expression.MemberSelectGlobalScopeNameClashCheck;
-import org.stjs.generator.check.expression.MemberSelectOuterScopeCheck;
 import org.stjs.generator.check.expression.MemberSelectServerSideCheck;
+import org.stjs.generator.check.expression.MethodInvocationConfigurationForbiddenCheck;
 import org.stjs.generator.check.expression.MethodInvocationMapConstructorCheck;
-import org.stjs.generator.check.expression.MethodInvocationOuterScopeCheck;
 import org.stjs.generator.check.expression.MethodInvocationServerSideCheck;
 import org.stjs.generator.check.expression.MethodInvocationSuperSynthCheck;
-import org.stjs.generator.check.expression.NewArrayForbiddenCheck;
+import org.stjs.generator.check.expression.NewArrayMultipleDimensForbiddenCheck;
 import org.stjs.generator.check.expression.NewClassInlineFunctionCheck;
 import org.stjs.generator.check.expression.NewClassObjectInitCheck;
 import org.stjs.generator.check.statement.AssertCheck;
@@ -107,10 +103,6 @@ import org.stjs.generator.writer.templates.fields.SetterAssignmentTemplate;
 import org.stjs.generator.writer.templates.fields.SetterCompoundAssignmentTemplate;
 import org.stjs.generator.writer.templates.fields.SetterUnaryTemplate;
 
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.VariableTree;
-
 /**
  * this is the main generation plugin that adds all the needed checks and writers.
  *
@@ -126,19 +118,14 @@ public class MainGenerationPlugin<JS> implements STJSGenerationPlugin<JS> {
 	public void contributeCheckVisitor(CheckVisitor visitor) {
 		visitor.contribute(new VariableFinalInLoopCheck());
 		visitor.contribute(new VariableWrongNameCheck());
-		visitor.contribute(new MethodVarArgParamCheck());
-		visitor.contribute(new FieldInitializerCheck());
 		visitor.contribute(new ClassDuplicateMemberNameCheck());
 		visitor.contribute(new NewClassInlineFunctionCheck());
 		visitor.contribute(new ClassImplementJavascriptFunctionCheck());
 		visitor.contribute(new ClassGlobalInstanceMembersCheck());
 		visitor.contribute(new ClassNamespaceCheck());
-		visitor.contribute(new MethodOverloadCheck());
 
 		visitor.contribute(new NewClassObjectInitCheck());
-		visitor.contribute(new ArrayTypeForbiddenCheck());
-		visitor.contribute(new ClassEnumWithoutMembersCheck());
-		visitor.contribute(new NewArrayForbiddenCheck());
+		visitor.contribute(new NewArrayMultipleDimensForbiddenCheck());
 
 		visitor.contribute(new BlockInstanceCheck());
 		visitor.contribute(new MethodInvocationMapConstructorCheck());
@@ -151,10 +138,6 @@ public class MainGenerationPlugin<JS> implements STJSGenerationPlugin<JS> {
 
 		visitor.contribute(new MethodDeclarationTemplateCheck());
 
-		visitor.contribute(new IdentifierAccessOuterScopeCheck());
-		visitor.contribute(new MethodInvocationOuterScopeCheck());
-		visitor.contribute(new MemberSelectOuterScopeCheck());
-
 		visitor.contribute(new ClassGlobalForbidInnerCheck());
 		visitor.contribute(new MethodInvocationSuperSynthCheck());
 
@@ -163,6 +146,7 @@ public class MainGenerationPlugin<JS> implements STJSGenerationPlugin<JS> {
 		visitor.contribute(new MethodInvocationServerSideCheck());
 		visitor.contribute(new MethodWrongNameCheck());
 
+		visitor.contribute(new MethodInvocationConfigurationForbiddenCheck());
 	}
 
 	@Override

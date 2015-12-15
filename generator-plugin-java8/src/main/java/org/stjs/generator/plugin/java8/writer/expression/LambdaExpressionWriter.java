@@ -1,24 +1,5 @@
 package org.stjs.generator.plugin.java8.writer.expression;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.lang.model.element.Element;
-
-import org.stjs.generator.GenerationContext;
-import org.stjs.generator.GeneratorConstants;
-import org.stjs.generator.check.expression.IdentifierAccessOuterScopeCheck;
-import org.stjs.generator.javac.TreeUtils;
-import org.stjs.generator.javascript.JavaScriptBuilder;
-import org.stjs.generator.javascript.Keyword;
-import org.stjs.generator.utils.JavaNodes;
-import org.stjs.generator.writer.WriterContributor;
-import org.stjs.generator.writer.WriterVisitor;
-import org.stjs.generator.writer.declaration.MethodWriter;
-import org.stjs.generator.writer.expression.MethodInvocationWriter;
-
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.IdentifierTree;
@@ -26,6 +7,23 @@ import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.util.TreeScanner;
+import org.stjs.generator.GenerationContext;
+import org.stjs.generator.GeneratorConstants;
+import org.stjs.generator.javac.TreeUtils;
+import org.stjs.generator.javascript.JavaScriptBuilder;
+import org.stjs.generator.javascript.Keyword;
+import org.stjs.generator.utils.JavaNodes;
+import org.stjs.generator.utils.Scopes;
+import org.stjs.generator.writer.WriterContributor;
+import org.stjs.generator.writer.WriterVisitor;
+import org.stjs.generator.writer.declaration.MethodWriter;
+import org.stjs.generator.writer.expression.MethodInvocationWriter;
+
+import javax.lang.model.element.Element;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * generates the code for Lambda expressions.
@@ -46,7 +44,7 @@ import com.sun.source.util.TreeScanner;
  */
 public class LambdaExpressionWriter<JS> implements WriterContributor<LambdaExpressionTree, JS> {
 
-	private boolean accessOuterScope(LambdaExpressionTree lambda) {
+	private boolean accessOuterScope(LambdaExpressionTree lambda, GenerationContext<JS> context) {
 		AtomicBoolean outerScopeAccess = new AtomicBoolean(false);
 
 		lambda.accept(new TreeScanner<Void, Void>() {
@@ -58,7 +56,7 @@ public class LambdaExpressionWriter<JS> implements WriterContributor<LambdaExpre
 					return super.visitIdentifier(tree, arg1);
 				}
 				Element fieldElement = TreeUtils.elementFromUse(tree);
-				if (IdentifierAccessOuterScopeCheck.isRegularInstanceField(fieldElement, tree)
+				if (Scopes.isRegularInstanceField(fieldElement, tree)
 						|| GeneratorConstants.THIS.equals(tree.getName().toString())) {
 					outerScopeAccess.set(true);
 				}
@@ -82,7 +80,7 @@ public class LambdaExpressionWriter<JS> implements WriterContributor<LambdaExpre
 					// only instance methods
 					return super.visitMethodInvocation(tree, arg1);
 				}
-				String name = MethodInvocationWriter.buildMethodName(tree);
+				String name = MethodInvocationWriter.buildMethodName(tree, context);
 
 				if (GeneratorConstants.THIS.equals(name) || GeneratorConstants.SUPER.equals(name)) {
 					// this and super call are ok
@@ -117,7 +115,7 @@ public class LambdaExpressionWriter<JS> implements WriterContributor<LambdaExpre
 		JS lambdaFunc = js.function(null, params, body);
 		int specialThisParamPos = MethodWriter.getTHISParamPos(tree.getParameters());
 
-		if (accessOuterScope(tree) || specialThisParamPos >= 0) {
+		if (accessOuterScope(tree, context) || specialThisParamPos >= 0) {
 			// bind for lamdas accessing the outher scope
 			JS target = js.keyword(Keyword.THIS);
 			JS stjsBind = js.property(context.js().name("stjs"), "bind");
