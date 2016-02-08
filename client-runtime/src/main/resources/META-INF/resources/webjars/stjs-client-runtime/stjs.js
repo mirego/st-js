@@ -295,6 +295,9 @@ Number.prototype.$java_hashCode = stjs.primitiveHashCode;
 String.prototype.$java_hashCode = stjs.primitiveHashCode;
 Boolean.prototype.$java_hashCode = function() { return this.valueOf() ? 1231 : 1237; }
 
+Number.prototype._constructor=function() {
+}
+
 Number.parseInt$String=function(str) {
     return parseInt(str);
 }

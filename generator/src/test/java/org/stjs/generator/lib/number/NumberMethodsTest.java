@@ -40,4 +40,9 @@ public class NumberMethodsTest extends AbstractStjsTest {
 		assertEquals(true, execute(Number6_toString.class));
 	}
 
+	@Test
+	public void testCanExtendsNumberClass() {
+		assertEquals("1234", execute(Number7_extendsNumberClass.class));
+	}
+
 }
