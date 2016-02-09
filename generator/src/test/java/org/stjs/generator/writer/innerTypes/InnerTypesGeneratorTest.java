@@ -282,4 +282,10 @@ public class InnerTypesGeneratorTest extends AbstractStjsTest {
                 "\"InnerTypes29_anonymous_class_with_constructor_parameters.InnerTypes29_anonymous_class_with_constructor_parameters$1\"))(this)._constructor$String(\"This is the value that has been passed in the constructor\");");
         Assert.assertEquals("This is the value that has been passed in the constructor", execute(InnerTypes29_anonymous_class_with_constructor_parameters.class));
     }
+
+    @Test
+    public void testInnerTypes_anonymous_class_calling_parent_method_from_interface() throws Exception {
+        assertCodeContains(InnerTypes30_anonymous_class_calling_parent_method_from_interface.class, "this._outerClass$1.methodFromInterface()");
+    }
+
 }
