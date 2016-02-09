@@ -36,10 +36,10 @@ public class TryCatchTest extends AbstractStjsTest {
                 "        }catch ($exception) {\n" +
                 "            if (stjs.isInstanceOf($exception, TryCatch2_multipleCatchClauses.CustomExceptionA)) {\n" +
                 "                var customA = $exception;\n" +
-                "                array.push(\"CustomExceptionA: \" + customA.getMessage());\n" +
+                "                array.push(\"CustomExceptionA: \" + customA.$java_getMessage());\n" +
                 "            } else if (stjs.isInstanceOf($exception, TryCatch2_multipleCatchClauses.CustomExceptionB)) {\n" +
                 "                var customb = $exception;\n" +
-                "                array.push(\"CustomExceptionB: \" + customb.getMessage());\n" +
+                "                array.push(\"CustomExceptionB: \" + customb.$java_getMessage());\n" +
                 "            } else {\n" +
                 "                 throw $exception;\n" +
                 "            }\n" +
@@ -69,10 +69,10 @@ public class TryCatchTest extends AbstractStjsTest {
                 "        catch ($exception) {\n" +
                 "            if (stjs.isInstanceOf($exception, TryCatch5_multipleExceptionTypesOnCatchClause.CustomExceptionA) || stjs.isInstanceOf($exception, TryCatch5_multipleExceptionTypesOnCatchClause.CustomExceptionB)) {\n" +
                 "                var e = $exception;\n" +
-                "                array.push(\"CustomExceptionA or CustomExceptionB: \" + e.getMessage());\n" +
+                "                array.push(\"CustomExceptionA or CustomExceptionB: \" + e.$java_getMessage());\n" +
                 "            } else if (stjs.isInstanceOf($exception, TryCatch5_multipleExceptionTypesOnCatchClause.CustomExceptionC)) {\n" +
                 "                var e = $exception;\n" +
-                "                array.push(\"CustomExceptionC: \" + e.getMessage());\n" +
+                "                array.push(\"CustomExceptionC: \" + e.$java_getMessage());\n" +
                 "            } else {\n" +
                 "                 throw $exception;\n" +
                 "            }\n" +
