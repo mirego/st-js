@@ -70,18 +70,17 @@ public final class Scopes {
 	}
 
 	private static boolean isTypeInClassHierarchy(GenerationContext<?> context, TypeMirror outerTypeErasure, TypeMirror type) {
-		while (true) {
-			TypeElement typeElement = ElementUtils.asTypeElement(context, type);
+		TypeElement typeElement = ElementUtils.asTypeElement(context, type);
 
-			if (typeElement != null) {
-				type = context.getTypes().erasure(typeElement.getSuperclass());
-				if (context.getTypes().isSameType(type, outerTypeErasure)) {
-					return true;
-				}
-			} else {
-				return false;
+		List<TypeElement> superTypes = ElementUtils.getSuperTypes(typeElement);
+		for (TypeElement superType : superTypes) {
+			type = context.getTypes().erasure(superType.asType());
+			if (context.getTypes().isSameType(type, outerTypeErasure)) {
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	public static ClassTree findEnclosingClassSkipAnonymousInitializer(TreePath path) {
