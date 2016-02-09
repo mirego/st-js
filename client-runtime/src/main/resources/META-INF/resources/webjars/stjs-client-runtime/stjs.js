@@ -1073,9 +1073,17 @@ stjs.extend(stjs.Java.Throwable, Error, [], function(constructor, prototype){
     };
 
 	prototype.toString = function() {
-	        var s = "Exception";//TODO should get the exception's type name here
-	        var message = this.getLocalizedMessage();
-	        return (message != null) ? (s + ": " + message) : s;
+        var s = this.constructor.$java_getSimpleName();
+        var message = this.getLocalizedMessage();
+
+        var result = (message != null) ? (s + ": " + message) : s;
+        result = result + "\nStack: " + this.getStackTrace();
+
+        if (this.cause) {
+            result = result + "\nCaused by: " + this.cause.toString();
+        }
+
+        return result;
 	 };
 
 	 prototype.getStackTrace = function() {
