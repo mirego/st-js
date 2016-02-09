@@ -1019,6 +1019,27 @@ stjs.STJSAssert.assertStateTrue = function(position, code, condition) {
 		stjs.assertHandler(position, code, "Wrong state. Condition is false");
 }
 /** exceptions **/
+
+Error.prototype.$java_getMessage = function() {
+    return this.message;
+};
+
+Error.prototype.$java_getLocalizedMessage = function() {
+    return this.message;
+};
+
+Error.prototype.$java_getCause = function() {
+    return null;
+};
+
+Error.prototype.$java_getStackTrace = function() {
+    return this.stack;
+};
+
+Error.prototype.$java_printStackTrace = function(){
+    console.error(this.$java_getStackTrace());
+};
+
 stjs.Java.Throwable = function(message, cause){
 	Error.call(this);
 	if(typeof Error.captureStackTrace === 'function'){
@@ -1033,7 +1054,6 @@ stjs.Java.Throwable = function(message, cause){
 		}
 	}
 	if (typeof message === "string"){
-		this.detailMessage  = message;
 		this.message = message;
 		this.cause = cause;
 	} else {
@@ -1041,18 +1061,17 @@ stjs.Java.Throwable = function(message, cause){
 	}
 };
 stjs.extend(stjs.Java.Throwable, Error, [], function(constructor, prototype){
-	prototype.detailMessage = null;
 	prototype.cause = null;
 
     prototype._constructor = function() {
         return this;
     };
     prototype._constructor$String = function(message) {
-        this.detailMessage = message;
+        this.message = message;
         return this;
     };
     prototype._constructor$String_Throwable = function(message, cause) {
-        this.detailMessage = message;
+        this.message = message;
         this.cause = cause;
         return this;
     };
@@ -1060,30 +1079,21 @@ stjs.extend(stjs.Java.Throwable, Error, [], function(constructor, prototype){
         this.cause = cause;
         return this;
     };
-	prototype.getMessage = function() {
-        return this.detailMessage;
-    };
-
-	prototype.getLocalizedMessage = function() {
-        return this.getMessage();
-    };
-
-	prototype.getCause = function() {
+	prototype.$java_getCause = function() {
         return (this.cause==this ? null : this.cause);
     };
-
 	prototype.toString = function() {
-	        var s = "Exception";//TODO should get the exception's type name here
-	        var message = this.getLocalizedMessage();
-	        return (message != null) ? (s + ": " + message) : s;
-	 };
+        var s = this.constructor.$java_getSimpleName();
+        var message = this.$java_getLocalizedMessage();
 
-	 prototype.getStackTrace = function() {
-		 return this.stack;
-	 };
+        var result = (message != null) ? (s + ": " + message) : s;
+        result = result + "\nStack: " + this.$java_getStackTrace();
 
-	 prototype.printStackTrace = function(){
-		 console.error(this.getStackTrace());
+        if (this.cause) {
+            result = result + "\nCaused by: " + this.cause.toString();
+        }
+
+        return result;
 	 };
 }, {});
 
