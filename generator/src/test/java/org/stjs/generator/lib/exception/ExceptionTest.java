@@ -21,4 +21,9 @@ public class ExceptionTest extends AbstractStjsTest{
         Assert.assertEquals(true, ((String)execute(Exception3_toString_contains_cause_exception.class)).contains("Caused by: MyExceptionA: the cause exception message"));
     }
 
+    @Test
+    public void testException_call_getMessage_on_js_exceptions() throws Exception {
+        Assert.assertEquals("Cannot call method \"toString\" of null", execute(Exception4_call_getMessage_on_js_exceptions.class));
+    }
+
 }
