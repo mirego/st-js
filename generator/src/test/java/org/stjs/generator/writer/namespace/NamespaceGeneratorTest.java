@@ -112,10 +112,8 @@ public class NamespaceGeneratorTest extends AbstractStjsTest {
         assertCodeContains(SampleClassToOverrideName_ButWithLongerName.class, config, "overriden.wildcard.namespace.SampleClassToOverrideName_ButWithLongerName = function() {};");
 
         assertCodeContains(
-                Namespace13_generator_configuration_specificClass_vs_wildcard.class,
-
+                Namespace13_generator_configuration_specificClass_vs_wildcard.class, config,
                 "new overriden.specificclass.namespace.SampleClassToOverrideName()",
-
                 "new overriden.wildcard.namespace.SampleClassToOverrideName_ButWithLongerName()"
         );
     }

@@ -1,0 +1,22 @@
+apply plugin: 'mirego.release'
+
+release {
+    checkTasks = [
+            ':client-runtime:clean',
+            ':client-runtime:check',
+            ':shared:clean',
+            ':shared:check',
+            ':generator:clean',
+            ':generator:check',
+            ':server:clean',
+            ':server:check'
+    ]
+    buildTasks = [
+            ':client-runtime:bintrayUpload',
+            ':shared:bintrayUpload',
+            ':generator:bintrayUpload',
+            ':server:bintrayUpload'
+    ]
+
+    updateVersionPart = 1
+}
