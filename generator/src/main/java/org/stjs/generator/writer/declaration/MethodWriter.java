@@ -159,7 +159,7 @@ public class MethodWriter<JS> extends AbstractMemberWriter<JS> implements Writer
 		}
 
 		Element element = TreeUtils.elementFromDeclaration(tree);
-		int deepnessLevel = Scopes.getElementDeepnessLevel(element);
+		int deepnessLevel = Scopes.getElementDeepnessLevelFromUse(context.getCurrentWrapper(), element);
 
 		String scopeAccessorPrefix = GeneratorConstants.THIS;
 		JS scopeAccessorValue = context.js().name(GeneratorConstants.THIS);

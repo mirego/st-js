@@ -504,8 +504,8 @@ public final class ElementUtils {
         return isClass(element) && (ElementUtils.enclosingClassOrNull(element) != null) && !ElementUtils.isStatic(element);
     }
 
-    public static int getInnerClassDeepnessLevel(Element element) {
-        int deepnessLevel = -1;
+    public static int getClassDeepnessLevel(Element element) {
+        int deepnessLevel = 0;
 
         while (isInnerClass(element)) {
             deepnessLevel++;

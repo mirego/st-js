@@ -285,7 +285,13 @@ public class InnerTypesGeneratorTest extends AbstractStjsTest {
 
     @Test
     public void testInnerTypes_anonymous_class_calling_parent_method_from_interface() throws Exception {
-        assertCodeContains(InnerTypes30_anonymous_class_calling_parent_method_from_interface.class, "this._outerClass$1.methodFromInterface()");
+        assertCodeContains(InnerTypes30_anonymous_class_calling_parent_method_from_interface.class, "this._outerClass$1.methodFromInterface() + this._outerClass$0._fieldFromRootClass;");
+    }
+
+    @Test
+    public void testInnerTypes_anonymous_class_inside_inner_class() throws Exception {
+        assertCodeContains(InnerTypes31_anonymous_class_inside_inner_class.class, "return this._outerClass$0._fieldInRootClass + this._outerClass$1._fieldInInnerClass + valueFromAnonymousClass;");
+        Assert.assertEquals("3210", execute(InnerTypes31_anonymous_class_inside_inner_class.class));
     }
 
 }
