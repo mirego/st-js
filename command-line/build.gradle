@@ -1,0 +1,41 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+    mavenLocal()
+    jcenter()
+    mirego 'common-web'
+}
+
+dependencies {
+    compile project(':generator')
+    compile 'jgrapht:jgrapht:0.7.3'
+    testCompile 'junit:junit:4.8.1'
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier 'sources'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact sourceJar
+        }
+    }
+}
+
+bintray {
+    pkg {
+        repo = 'common-web'
+    }
+    publications = ['maven']
+}
