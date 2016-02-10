@@ -46,7 +46,7 @@ public class DefaultMemberSelectTemplate<JS> implements WriterContributor<Member
 
 	private JS buildTargetForThisAccessor(MemberSelectTree tree, GenerationContext<JS> context) {
 		Element element = TreeUtils.elementFromUse(tree);
-		int deepnessLevel = Scopes.getElementDeepnessLevel(element);
+		int deepnessLevel = Scopes.getElementDeepnessLevelFromUse(context.getCurrentWrapper(), element);
 
 		// Create a target such as 'this._outerClass$x'
 		String scopeAccessorVariable = Scopes.buildOuterClassAccessTargetPrefix()

@@ -1,10 +1,7 @@
 package org.stjs.generator.utils;
 
-import com.sun.source.tree.BlockTree;
-import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.source.util.TreePath;
+import com.sun.source.tree.Tree;
 import org.stjs.generator.GenerationContext;
 import org.stjs.generator.GeneratorConstants;
 import org.stjs.generator.javac.ElementUtils;
@@ -41,18 +38,18 @@ public final class Scopes {
 	 * True if outerType is strictly the outer type of the subtype
 	 *
 	 * @param context
-	 * @param outerType
-	 * @param subType
+	 * @param methodOwnerElement
+	 * @param currentScopeClassElement
      * @return
      */
-	public static boolean isOuterType(GenerationContext<?> context, TypeElement outerType, TypeElement subType) {
-		TypeMirror subTypeErasure = context.getTypes().erasure(subType.asType());
+	public static boolean isOuterType(GenerationContext<?> context, TypeElement methodOwnerElement, TypeElement currentScopeClassElement) {
+		TypeMirror subTypeErasure = context.getTypes().erasure(currentScopeClassElement.asType());
 
 		if (!(subTypeErasure instanceof DeclaredType)) {
 			return false;
 		}
 
-		TypeMirror outerTypeErasure = context.getTypes().erasure(outerType.asType());
+		TypeMirror outerTypeErasure = context.getTypes().erasure(methodOwnerElement.asType());
 		for (TypeMirror type = ((DeclaredType) subTypeErasure).getEnclosingType(); type != null; type = ((DeclaredType) type).getEnclosingType()) {
 			if (context.getTypes().isSameType(type, outerTypeErasure)) {
 				return true;
@@ -83,49 +80,35 @@ public final class Scopes {
 		return false;
 	}
 
-	public static ClassTree findEnclosingClassSkipAnonymousInitializer(TreePath path) {
-		// if the block is an anonymous initializer, then return the outer class
-		TreePath enclosingClassTreePath = TreeUtils.enclosingPathOfType(path, ClassTree.class);
-		if (enclosingClassTreePath == null) {
-			return null;
+	public static <JS, T extends Tree> int getElementDeepnessLevelFromUse(TreeWrapper<T, JS> treeWrapper, Element methodElement) {
+		GenerationContext<JS> context = treeWrapper.getContext();
+
+		TypeElement classCallingTheMethod = TreeUtils.getEnclosingClass(treeWrapper.getPath());
+		DeclaredType erasedClassCallingTheMethod = (DeclaredType) context.getTypes().erasure(classCallingTheMethod.asType());
+
+		TypeElement targetMethodOwner = (TypeElement) methodElement.getEnclosingElement();
+		TypeMirror erasedTargetMethodOwner = context.getTypes().erasure(targetMethodOwner.asType());
+
+		TypeMirror type = erasedClassCallingTheMethod.getEnclosingType();
+		while (type != null) {
+			Element element = context.getTypes().asElement(type);
+
+			if (isInstanceOfType(context, erasedTargetMethodOwner, type)) {
+				return ElementUtils.getClassDeepnessLevel(element);
+			}
+
+			if (!ElementUtils.isInnerClass(element)) {
+				return 0;
+			}
+
+			type = ((DeclaredType) type).getEnclosingType();
 		}
 
-		if (isInsideInitializerBlock(path)) {
-			// get the outer class
-			TreePath outerClassTreePath = TreeUtils.enclosingPathOfType(enclosingClassTreePath.getParentPath(), ClassTree.class);
-			if (outerClassTreePath != null) {
-				enclosingClassTreePath = outerClassTreePath;
-			}
-		}
-		return (ClassTree) enclosingClassTreePath.getLeaf();
+		return 0;
 	}
 
-	private static boolean isInsideInitializerBlock(TreePath path) {
-		TreePath p = path;
-		while (p != null) {
-			if (p.getLeaf() instanceof BlockTree && p.getParentPath().getLeaf() instanceof ClassTree) {
-				return true;
-			}
-			if (p.getLeaf() instanceof MethodTree) {
-				return false;
-			}
-			p = p.getParentPath();
-		}
-		return false;
-	}
-
-	public static int getElementDeepnessLevel(Element element) {
-		int deepnessLevel = -1;
-		Element whileElement = element;
-		while (whileElement != null) {
-			// Ignore enclosing class and package by default
-			if (whileElement.getKind() != ElementKind.PACKAGE && whileElement.getKind() != ElementKind.CLASS) {
-				deepnessLevel++;
-			}
-			whileElement = whileElement.getEnclosingElement();
-		}
-
-		return deepnessLevel;
+	private static <JS> boolean isInstanceOfType(GenerationContext<JS> context, TypeMirror erasedTargetMethodOwner, TypeMirror type) {
+		return context.getTypes().isSameType(type, erasedTargetMethodOwner) || isTypeInClassHierarchy(context, erasedTargetMethodOwner, type);
 	}
 
 	public static String buildOuterClassAccessTargetPrefix() {
@@ -144,13 +127,12 @@ public final class Scopes {
 	}
 
 	public static List<String> buildOuterClassConstructorParametersNames(Element targetClass) {
-		int targetClassDeepnessLevel = ElementUtils.getInnerClassDeepnessLevel(targetClass);
+		int targetClassDeepnessLevel = ElementUtils.getClassDeepnessLevel(targetClass);
 
-		// Deepness of 0 mean 1 level of deepness
 		String prefix = GeneratorConstants.INNER_CLASS_CONSTRUCTOR_PARAM_PREFIX + GeneratorConstants.AUTO_GENERATED_ELEMENT_SEPARATOR;
 
 		List<String> outerClassVarNames = new ArrayList<>();
-		for (int i = 0; i <= targetClassDeepnessLevel; i++) {
+		for (int i = 0; i <= targetClassDeepnessLevel - 1; i++) {
 			outerClassVarNames.add(prefix + i);
 		}
 
@@ -158,15 +140,15 @@ public final class Scopes {
 	}
 
 	public static List<String> buildNewClassInstanceAllocFunctionParametersAsString(Element callingClass, Element targetClass) {
-		int callingClassDeepnessLevel = ElementUtils.getInnerClassDeepnessLevel(callingClass);
-		int targetClassDeepnessLevel = ElementUtils.getInnerClassDeepnessLevel(targetClass);
+		int callingClassDeepnessLevel = ElementUtils.getClassDeepnessLevel(callingClass);
+		int targetClassDeepnessLevel = ElementUtils.getClassDeepnessLevel(targetClass);
 
 		// get the list of outer variables based on target class deepness:
 		//   [outerClass$0, outerClass$1, outerClass$2, ...]
 		List<String> outerClassVarNames = buildOuterClassConstructorParametersNames(targetClass);
 
 		// remove any variable that are not available in the calling class scope based on the calling class deepness.
-		while(outerClassVarNames.size() > callingClassDeepnessLevel + 1) {
+		while(outerClassVarNames.size() > callingClassDeepnessLevel) {
 			outerClassVarNames.remove(outerClassVarNames.size() - 1);
 		}
 
@@ -178,11 +160,11 @@ public final class Scopes {
 		}
 
 		// if the target class level is deeper than the calling class, add "this" as the last outerclass parameter
-		if (outerClassVarNames.size() <= targetClassDeepnessLevel) {
+		if (outerClassVarNames.size() <= targetClassDeepnessLevel - 1) {
 			outerClassVarNames.add(GeneratorConstants.THIS);
 		}
 
-		assert outerClassVarNames.size() == targetClassDeepnessLevel + 1;
+		assert outerClassVarNames.size() == targetClassDeepnessLevel;
 
 		return outerClassVarNames;
 	}

@@ -1,10 +1,7 @@
 package org.stjs.generator.writer;
 
-import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.util.TreePath;
-import org.stjs.generator.GenerationContext;
 import org.stjs.generator.GeneratorConstants;
 import org.stjs.generator.javac.TreeUtils;
 import org.stjs.generator.javac.TreeWrapper;
@@ -47,7 +44,9 @@ public final class MemberWriters {
 	private static <JS, T extends Tree> JS buildTargetForOuterTypeAccess(TreeWrapper<T, JS> tw) {
 		// Find the scope deepness level to which we access the method
 		Element element = TreeUtils.elementFromUse((ExpressionTree) tw.getTree());
-		int deepnessLevel = Scopes.getElementDeepnessLevel(element);
+		int deepnessLevel = Scopes.getElementDeepnessLevelFromUse(tw, element);
+
+
 		String scopeAccessorPrefix = Scopes.buildOuterClassAccessTargetPrefix();
 
 		return tw.getContext().js().name(scopeAccessorPrefix + GeneratorConstants.AUTO_GENERATED_ELEMENT_SEPARATOR + deepnessLevel);
