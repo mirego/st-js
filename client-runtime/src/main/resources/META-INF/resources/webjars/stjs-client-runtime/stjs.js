@@ -315,7 +315,6 @@ Number.toString$int_int = function(i, radix) {
     return new Number(i).toString(radix);
 };
 
-
 /* type conversion - approximative as Javascript only has integers and doubles */
 if (!Number.prototype.intValue) {
 	Number.prototype.intValue=function(){
@@ -348,6 +347,18 @@ if (!Number.prototype.doubleValue) {
 	Number.prototype.doubleValue=function(){
     	return this.valueOf();
 	}
+}
+
+if (!Number.prototype.compareTo) {
+  Number.prototype.compareTo = function(other) {
+    if (other == null)
+      return 1;
+    if (this < other)
+      return -1;
+    if (this == other)
+      return 0;
+    return 1;
+  }
 }
 
 if (!Number.parseInt) {
